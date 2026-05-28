@@ -19,7 +19,7 @@ def _namespace(csv_file, target_file, **overrides):
         "sheet": None,
         "start_row": 1,
         "start_col": 1,
-        "delimiter": ",",
+        "delimiter": ";",
         "encoding": "utf-8",
         "has_header": False,
         "dry_run": False,
@@ -28,11 +28,11 @@ def _namespace(csv_file, target_file, **overrides):
     return argparse.Namespace(**values)
 
 
-def test_read_csv_reads_rows_with_custom_delimiter(tmp_path):
+def test_read_csv_reads_rows_with_default_semicolon_delimiter(tmp_path):
     csv_path = tmp_path / "dane.csv"
     csv_path.write_text("imie;nazwisko\nJan;Kowalski\n", encoding="utf-8")
 
-    assert read_csv(csv_path, delimiter=";") == [
+    assert read_csv(csv_path) == [
         ["imie", "nazwisko"],
         ["Jan", "Kowalski"],
     ]

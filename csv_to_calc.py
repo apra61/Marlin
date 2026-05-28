@@ -56,7 +56,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--sheet", help="nazwa arkusza docelowego; domyślnie aktywny/pierwszy arkusz")
     parser.add_argument("--start-row", type=positive_int, default=1, help="pierwszy wiersz zapisu, numerowany od 1")
     parser.add_argument("--start-col", type=positive_int, default=1, help="pierwsza kolumna zapisu, numerowana od 1")
-    parser.add_argument("--delimiter", default=",", help="separator CSV; domyślnie przecinek")
+    parser.add_argument("--delimiter", default=";", help="separator CSV; domyślnie średnik")
     parser.add_argument("--encoding", default="utf-8", help="kodowanie CSV; domyślnie utf-8")
     parser.add_argument(
         "--has-header",
@@ -105,7 +105,7 @@ def validate_args(args: argparse.Namespace) -> ImportConfig:
     )
 
 
-def read_csv(path: Path | str, delimiter: str = ",", encoding: str = "utf-8") -> list[list[str]]:
+def read_csv(path: Path | str, delimiter: str = ";", encoding: str = "utf-8") -> list[list[str]]:
     try:
         with Path(path).open("r", newline="", encoding=encoding) as csv_file:
             return list(csv.reader(csv_file, delimiter=delimiter))

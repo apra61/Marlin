@@ -12,7 +12,7 @@ Podstawowe użycie:
 
 * `python3 csv_to_calc.py dane.csv raport.xlsx --sheet Dane`
 * `python3 csv_to_calc.py dane.csv raport.ods --start-row 2 --start-col 3 --has-header`
-* `python3 csv_to_calc.py dane.csv raport.xlsx --delimiter ";" --encoding cp1250`
+* `python3 csv_to_calc.py dane.csv raport.xlsx --encoding cp1250`
 
 Najważniejsze flagi:
 
@@ -20,7 +20,7 @@ Najważniejsze flagi:
 * `--start-row N` - pierwszy wiersz zapisu, numerowany od 1.
 * `--start-col N` - pierwsza kolumna zapisu, numerowana od 1.
 * `--has-header` / `--skip-header` - pomija pierwszy wiersz CSV przy zapisie.
-* `--delimiter ZNAK` - separator CSV; domyślnie `,`.
+* `--delimiter ZNAK` - separator CSV; domyślnie `;`.
 * `--encoding KODOWANIE` - kodowanie CSV; domyślnie `utf-8`.
 * `--dry-run` - nie zapisuje skoroszytu, tylko pokazuje liczbę wierszy i arkusz docelowy.
 
