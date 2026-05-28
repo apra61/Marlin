@@ -30,6 +30,7 @@ class ImportConfig:
     sheet_name: str | None
     start_row: int
     start_col: int
+    column_count: int | None
     delimiter: str
     encoding: str
     has_header: bool
@@ -56,6 +57,13 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--sheet", help="nazwa arkusza docelowego; domyślnie aktywny/pierwszy arkusz")
     parser.add_argument("--start-row", type=positive_int, default=1, help="pierwszy wiersz zapisu, numerowany od 1")
     parser.add_argument("--start-col", type=positive_int, default=1, help="pierwsza kolumna zapisu, numerowana od 1")
+    parser.add_argument(
+        "--columns",
+        "--max-cols",
+        dest="column_count",
+        type=positive_int,
+        help="maksymalna liczba kolumn CSV do zapisania, licząc od lewej",
+    )
     parser.add_argument("--delimiter", default=";", help="separator CSV; domyślnie średnik")
     parser.add_argument("--encoding", default="utf-8", help="kodowanie CSV; domyślnie utf-8")
     parser.add_argument(
@@ -98,6 +106,7 @@ def validate_args(args: argparse.Namespace) -> ImportConfig:
         sheet_name=args.sheet,
         start_row=args.start_row,
         start_col=args.start_col,
+        column_count=args.column_count,
         delimiter=args.delimiter,
         encoding=args.encoding,
         has_header=args.has_header,
@@ -127,8 +136,20 @@ def rows_to_write(rows: Sequence[Sequence[str]], has_header: bool) -> list[Seque
     return list(rows)
 
 
+def limit_columns(rows: Sequence[Sequence[str]], column_count: int | None) -> list[Sequence[str]]:
+    if column_count is None:
+        return list(rows)
+    return [list(row[:column_count]) for row in rows]
+
+
 def count_rows_to_write(rows: Sequence[Sequence[str]], has_header: bool) -> int:
     return len(rows_to_write(rows, has_header))
+
+
+def count_columns_to_write(rows: Sequence[Sequence[str]]) -> int:
+    if not rows:
+        return 0
+    return max(len(row) for row in rows)
 
 
 def import_rows(config: ImportConfig, rows: Sequence[Sequence[str]]) -> str:
@@ -252,13 +273,15 @@ def main(argv: Sequence[str] | None = None) -> int:
     try:
         config = validate_args(args)
         csv_rows = read_csv(config.csv_path, delimiter=config.delimiter, encoding=config.encoding)
-        data_rows = rows_to_write(csv_rows, config.has_header)
+        data_rows = limit_columns(rows_to_write(csv_rows, config.has_header), config.column_count)
+        data_columns = count_columns_to_write(data_rows)
         planned_sheet = config.sheet_name or "aktywny/pierwszy arkusz"
 
         if config.dry_run:
             print(
                 "Tryb dry-run: zapis pominięty. "
                 f"Wiersze do zapisania: {len(data_rows)}. "
+                f"Kolumny do zapisania: {data_columns}. "
                 f"Arkusz docelowy: {planned_sheet}."
             )
             return 0
@@ -268,7 +291,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         print(f"Błąd: {exc}", file=sys.stderr)
         return exc.exit_code
 
-    print(f"Zapisano {len(data_rows)} wierszy do arkusza: {actual_sheet}.")
+    print(f"Zapisano {len(data_rows)} wierszy i {data_columns} kolumn do arkusza: {actual_sheet}.")
     return 0
 
 

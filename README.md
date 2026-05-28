@@ -12,6 +12,7 @@ Podstawowe użycie:
 
 * `python3 csv_to_calc.py dane.csv raport.xlsx --sheet Dane`
 * `python3 csv_to_calc.py dane.csv raport.ods --start-row 2 --start-col 3 --has-header`
+* `python3 csv_to_calc.py dane.csv raport.xlsx --columns 5`
 * `python3 csv_to_calc.py dane.csv raport.xlsx --encoding cp1250`
 
 Najważniejsze flagi:
@@ -19,6 +20,7 @@ Najważniejsze flagi:
 * `--sheet NAZWA` - arkusz docelowy; bez tej flagi używany jest aktywny/pierwszy arkusz.
 * `--start-row N` - pierwszy wiersz zapisu, numerowany od 1.
 * `--start-col N` - pierwsza kolumna zapisu, numerowana od 1.
+* `--columns N` / `--max-cols N` - maksymalna liczba kolumn CSV do zapisania, licząc od lewej.
 * `--has-header` / `--skip-header` - pomija pierwszy wiersz CSV przy zapisie.
 * `--delimiter ZNAK` - separator CSV; domyślnie `;`.
 * `--encoding KODOWANIE` - kodowanie CSV; domyślnie `utf-8`.

@@ -5,7 +5,9 @@ import pytest
 from csv_to_calc import (
     CsvToCalcError,
     build_parser,
+    count_columns_to_write,
     count_rows_to_write,
+    limit_columns,
     main,
     read_csv,
     validate_args,
@@ -19,6 +21,7 @@ def _namespace(csv_file, target_file, **overrides):
         "sheet": None,
         "start_row": 1,
         "start_col": 1,
+        "column_count": None,
         "delimiter": ";",
         "encoding": "utf-8",
         "has_header": False,
@@ -38,7 +41,7 @@ def test_read_csv_reads_rows_with_default_semicolon_delimiter(tmp_path):
     ]
 
 
-@pytest.mark.parametrize("option", ["--start-row", "--start-col"])
+@pytest.mark.parametrize("option", ["--start-row", "--start-col", "--columns"])
 def test_parser_rejects_non_positive_start_positions(option, capsys):
     parser = build_parser()
 
@@ -110,3 +113,21 @@ def test_main_reports_friendly_error_for_invalid_xlsx(tmp_path, capsys):
 )
 def test_count_rows_to_write_with_and_without_header(rows, has_header, expected_count):
     assert count_rows_to_write(rows, has_header) == expected_count
+
+
+def test_limit_columns_keeps_leftmost_columns():
+    rows = [["a", "b", "c"], ["1", "2", "3"]]
+
+    assert limit_columns(rows, 2) == [["a", "b"], ["1", "2"]]
+
+
+def test_limit_columns_keeps_all_columns_when_not_configured():
+    rows = [["a", "b", "c"], ["1", "2", "3"]]
+
+    assert limit_columns(rows, None) == rows
+
+
+def test_count_columns_to_write_uses_widest_row():
+    rows = [["a"], ["1", "2", "3"]]
+
+    assert count_columns_to_write(rows) == 3
