@@ -1,0 +1,16 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "studio-statystyka"
+version = "0.1.0"
+description = "Starter project for descriptive statistics."
+readme = "README.md"
+requires-python = ">=3.10"
+
+[project.scripts]
+studio-statystyka = "studio_statystyka.__main__:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
