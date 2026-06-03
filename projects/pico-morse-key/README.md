@@ -44,6 +44,8 @@ CS1237 albo dwa niezalezne kanaly w zgodnym module wielokanalowym.
 | LED statusu | GP25 | Wbudowana dioda Pico |
 | Masa | GND | Wspolna masa Pico i obu modulow CS1237 |
 
+Szczegolowy schemat tekstowy jest w `WIRING.md`.
+
 Nie podlaczaj wejscia CW radia bezposrednio do GPIO. Uzyj optoizolatora
 albo tranzystora/MOSFET-a w ukladzie otwartego kolektora i sprawdz polaryzacje
 oraz napiecie na gniezdzie klucza w dokumentacji nadajnika.
