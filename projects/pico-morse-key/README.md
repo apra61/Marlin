@@ -2,8 +2,8 @@
 
 Ten projekt opisuje dwupadowy klucz Morse'a, w ktorym klasyczne styki zostaly
 zastapione dwiema belkami tensometrycznymi. Raspberry Pi Pico odczytuje nacisk
-z dwoch torow analogowych, filtruje sygnal, wykrywa kropke i kreske z histereza
-oraz generuje wyjscie CW w trybie iambic B.
+z dwoch przetwornikow CS1237, filtruje sygnal, wykrywa kropke i kreske z
+histereza oraz generuje wyjscie CW w trybie iambic B.
 
 ## Zalozenia
 
@@ -17,29 +17,32 @@ oraz generuje wyjscie CW w trybie iambic B.
 ## Elektronika
 
 Pico nie mierzy bezposrednio mostka tensometrycznego, bo typowy mostek daje
-sygnal rzedu pojedynczych miliwoltow. Kazda belka wymaga toru kondycjonowania:
+sygnal rzedu pojedynczych miliwoltow. Kazda belka ma wlasny przetwornik CS1237:
 
 1. Tensometr w mostku pelnym albo polmostku z precyzyjnymi rezystorami
    dopelniajacymi.
-2. Wzmacniacz instrumentalny z zasilaniem 3,3 V, np. INA333, AD8426, INA125
-   albo gotowy modul dajacy wyjscie analogowe.
-3. Polaryzacja wyjscia wzmacniacza w okolice 1,65 V przy braku nacisku.
-4. Zakres wyjscia ograniczony do 0-3,3 V. Wejsc ADC Pico nie wolno przekraczac.
+2. Modul CS1237 z wejsciem roznicowym `AINP/AINN`, wzmacniaczem PGA i interfejsem
+   dwupinowym `SCLK` + `DRDY/DOUT`.
+3. Zasilanie CS1237 zgodne z modulem. Jesli modul pracuje na 5 V, dopasuj poziomy
+   logiczne do 3,3 V GPIO Pico.
+4. W firmware ustawiono `Channel A`, `PGA 128` i `640 Hz`, bo domyslne 10 Hz jest
+   zbyt wolne dla wygodnego kluczowania.
 
-Moduly HX711 sa wygodne do wag, ale w kluczu Morse'a sa graniczne: 10 SPS jest
-zbyt wolne, a 80 SPS dziala tylko przy niskich predkosciach i wymaga osobnego
-sterownika cyfrowego. Ten firmware zaklada szybszy tor analogowy do ADC Pico.
+Jeden CS1237 obsluguje jedna belke. Dla dwoch padow potrzebne sa dwa uklady
+CS1237 albo dwa niezalezne kanaly w zgodnym module wielokanalowym.
 
 ## Polaczenia
 
 | Funkcja | Pin Pico | Uwagi |
 | --- | --- | --- |
-| Belka kropki, wyjscie wzmacniacza | GP26 / ADC0 | 0-3,3 V, spoczynek ok. 1,65 V |
-| Belka kreski, wyjscie wzmacniacza | GP27 / ADC1 | 0-3,3 V, spoczynek ok. 1,65 V |
+| CS1237 kropki, `DRDY/DOUT` | GP2 | Wejscie z podciagnieciem Pico |
+| CS1237 kropki, `SCLK` | GP3 | Wyjscie zegara, stan spoczynkowy niski |
+| CS1237 kreski, `DRDY/DOUT` | GP4 | Wejscie z podciagnieciem Pico |
+| CS1237 kreski, `SCLK` | GP5 | Wyjscie zegara, stan spoczynkowy niski |
 | Wyjscie kluczujace CW | GP16 | Steruje optoizolatorem albo tranzystorem open collector |
 | Sidetone PWM | GP15 | Do buzzera/piezo przez prosty filtr lub wzmacniacz |
 | LED statusu | GP25 | Wbudowana dioda Pico |
-| Masa analogowa | GND | Wspolna masa z torami wzmacniaczy |
+| Masa | GND | Wspolna masa Pico i obu modulow CS1237 |
 
 Nie podlaczaj wejscia CW radia bezposrednio do GPIO. Uzyj optoizolatora
 albo tranzystora/MOSFET-a w ukladzie otwartego kolektora i sprawdz polaryzacje
@@ -58,10 +61,12 @@ oraz napiecie na gniezdzie klucza w dokumentacji nadajnika.
 
 Pliki:
 
-- `src/main.cpp` - odczyt ADC, filtracja, kalibracja, histereza i wyjscia Pico.
+- `src/cs1237.hpp` oraz `src/cs1237.cpp` - sterownik dwupinowego interfejsu
+  CS1237, konfiguracja rejestru i konwersja probek 24-bitowych.
+- `src/main.cpp` - odczyt CS1237, filtracja, kalibracja, histereza i wyjscia Pico.
 - `src/morse_keyer.hpp` oraz `src/morse_keyer.cpp` - przenosny rdzen klucza
   iambic, bez zaleznosci od Pico SDK.
-- `test/test_morse_keyer.cpp` - testy hostowe algorytmu.
+- `test/test_morse_keyer.cpp` - testy hostowe algorytmu i konwersji ramek CS1237.
 
 Po starcie trzymaj obie belki puszczone. Firmware czeka chwile, mierzy poziomy
 zerowe, a potem sledzi dryft zera tylko wtedy, gdy dany pad nie jest aktywny.
@@ -69,10 +74,11 @@ zerowe, a potem sledzi dryft zera tylko wtedy, gdy dany pad nie jest aktywny.
 Najwazniejsze stale w `src/main.cpp`:
 
 - `kWpm` - predkosc nadawania.
-- `kPressThresholdCounts` - prog aktywacji nacisku w licznikach ADC.
+- `kCs1237Config` - konfiguracja CS1237: kanal A, PGA 128, 640 Hz.
+- `kPressThresholdCounts` - prog aktywacji nacisku w licznikach CS1237.
 - `kReleaseThresholdCounts` - prog zwolnienia; mniejszy od progu aktywacji,
   zeby zapewnic histereze.
-- `direction` w konstruktorze `AnalogPaddle` - ustaw `1` albo `-1`, jesli nacisk
+- `direction` w konstruktorze `Cs1237Paddle` - ustaw `1` albo `-1`, jesli nacisk
   na danej belce zmniejsza zamiast zwiekszac odczyt wzgledem zera.
 
 ## Budowanie i testowanie
@@ -98,8 +104,8 @@ Wgranie: przytrzymaj `BOOTSEL`, podlacz Pico przez USB i skopiuj
 
 ## Uruchomienie
 
-1. Podlacz oba tory tensometryczne i sprawdz multimetrem, ze wyjscia wzmacniaczy
-   sa w zakresie 0-3,3 V.
+1. Podlacz oba mostki tensometryczne do dwoch modulow CS1237 i sprawdz zasilanie
+   oraz poziomy logiczne `DRDY/DOUT`.
 2. Wlacz Pico bez dotykania belek.
 3. Otworz port USB-serial. Co sekunde firmware wypisuje surowe odczyty,
    odchylenie od zera i stan aktywny dla obu padow.

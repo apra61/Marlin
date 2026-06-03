@@ -17,6 +17,7 @@ project(pico_morse_key C CXX ASM)
 pico_sdk_init()
 
 add_executable(pico_morse_key
+  src/cs1237.cpp
   src/main.cpp
   src/morse_keyer.cpp
 )
@@ -24,7 +25,6 @@ add_executable(pico_morse_key
 target_include_directories(pico_morse_key PRIVATE src)
 target_link_libraries(pico_morse_key
   pico_stdlib
-  hardware_adc
   hardware_pwm
 )
 

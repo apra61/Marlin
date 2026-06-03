@@ -7,7 +7,7 @@ BUILD_DIR ?= build/host
 test: $(BUILD_DIR)/test_morse_keyer
 	./$(BUILD_DIR)/test_morse_keyer
 
-$(BUILD_DIR)/test_morse_keyer: src/morse_keyer.cpp test/test_morse_keyer.cpp src/morse_keyer.hpp
+$(BUILD_DIR)/test_morse_keyer: src/morse_keyer.cpp test/test_morse_keyer.cpp src/cs1237.hpp src/morse_keyer.hpp
 	mkdir -p $(BUILD_DIR)
 	$(CXX) $(CXXFLAGS) src/morse_keyer.cpp test/test_morse_keyer.cpp -o $@
 

@@ -1,3 +1,4 @@
+#include "cs1237.hpp"
 #include "morse_keyer.hpp"
 
 #include <cstdlib>
@@ -115,6 +116,14 @@ void test_iambic_a_does_not_add_release_memory() {
   require_start(starts, 0, MorseElement::Dot, 0);
 }
 
+void test_cs1237_sign_extension() {
+  require(Cs1237::sign_extend24(0x000000U) == 0, "CS1237 zero conversion failed");
+  require(Cs1237::sign_extend24(0x000001U) == 1, "CS1237 positive LSB conversion failed");
+  require(Cs1237::sign_extend24(0x7FFFFFU) == 8388607, "CS1237 max positive conversion failed");
+  require(Cs1237::sign_extend24(0x800000U) == -8388608, "CS1237 min negative conversion failed");
+  require(Cs1237::sign_extend24(0xFFFFFFU) == -1, "CS1237 negative LSB conversion failed");
+}
+
 int main() {
   test_single_dot_timing();
   test_held_dot_repeats_after_element_gap();
@@ -122,6 +131,7 @@ int main() {
   test_iambic_squeeze_alternates();
   test_short_squeeze_has_one_opposite_memory_element();
   test_iambic_a_does_not_add_release_memory();
-  std::cout << "All Morse keyer tests passed.\n";
+  test_cs1237_sign_extension();
+  std::cout << "All host tests passed.\n";
   return 0;
 }
