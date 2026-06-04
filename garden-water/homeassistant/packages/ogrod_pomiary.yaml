@@ -1,0 +1,85 @@
+# Pakiet HA — agregacja 2× Wemos (MQTT discovery z ESPHome)
+# W configuration.yaml: homeassistant: packages: !include_dir_named packages
+#   lub: packages: ogrod_pomiary: !include garden-water/homeassistant/packages/ogrod_pomiary.yaml
+#
+# Wymaga: oba node'y z MQTT discovery (common/mqtt.yaml) oraz encja switch.pompa_1
+# na Node_sterowanie (moduł 4 przekaźników — osobna konfiguracja).
+
+# --- Szablon: zbiorczy alarm MAX (podziemny lub taras) ---
+template:
+  binary_sensor:
+    - name: "Ogród MAX zbiornik"
+      unique_id: ogrod_max_zbiornik
+      device_class: problem
+      state: >
+        {{ is_state('binary_sensor.node_pomiar_podziemny_max', 'on')
+           or is_state('binary_sensor.node_taras_taras_max', 'on') }}
+      availability: >
+        {{ has_value('binary_sensor.node_pomiar_podziemny_max')
+           or has_value('binary_sensor.node_taras_taras_max') }}
+
+  sensor:
+    - name: "Ogród poziom łączny szacunek"
+      unique_id: ogrod_poziom_laczny_l
+      unit_of_measurement: L
+      device_class: water
+      state_class: measurement
+      state: >
+        {% set p = states('sensor.node_pomiar_podziemny_poziom') | float(0) %}
+        {% set t = states('sensor.node_taras_taras_poziom') | float(0) %}
+        {{ ((p / 100 * 2800) + (t / 100 * 4600)) | round(0) }}
+      availability: >
+        {{ has_value('sensor.node_pomiar_podziemny_poziom')
+           and has_value('sensor.node_taras_taras_poziom') }}
+
+# --- Automatyzacje MAX → pompa 1 OFF (dostosuj entity_id po pierwszym discovery) ---
+automation:
+  - id: ogrod_podziemny_max_stop_pompa1
+    alias: "Ogród — MAX podziemny wyłącza pompę 1"
+    mode: single
+    trigger:
+      - platform: state
+        entity_id: binary_sensor.node_pomiar_podziemny_max
+        to: "on"
+    action:
+      - service: switch.turn_off
+        target:
+          entity_id: switch.node_sterowanie_pompa_1
+      - service: persistent_notification.create
+        data:
+          title: "Zbiornik podziemny — MAX"
+          message: "Pompa 1 wyłączona (poziom maksymalny)."
+
+  - id: ogrod_taras_max_stop_pompa1
+    alias: "Ogród — MAX taras wyłącza pompę 1"
+    mode: single
+    trigger:
+      - platform: state
+        entity_id: binary_sensor.node_taras_taras_max
+        to: "on"
+    action:
+      - service: switch.turn_off
+        target:
+          entity_id: switch.node_sterowanie_pompa_1
+      - service: persistent_notification.create
+        data:
+          title: "Zbiornik taras — MAX"
+          message: "Pompa 1 wyłączona (taras pełny)."
+
+  - id: ogrod_taras_niski_alarm
+    alias: "Ogród — taras poniżej 49% (info)"
+    mode: single
+    trigger:
+      - platform: numeric_state
+        entity_id: sensor.node_taras_taras_poziom
+        below: 49
+        for:
+          minutes: 5
+    action:
+      - service: persistent_notification.create
+        data:
+          title: "Niski poziom tarasu"
+          message: "Taras < 49% — rozważ pompa 1 lub podlanie częściowe."
+
+# --- Dashboard (opcjonalnie włącz w UI) ---
+# Lovelace: karty entity dla sensor.node_pomiar_*, sensor.node_taras_*, binary_sensor ogrod_max

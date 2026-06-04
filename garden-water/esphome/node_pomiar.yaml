@@ -1,0 +1,120 @@
+# Node_pomiar — Wemos D1 Mini (ESP8266)
+# Ultradźwięk: zbiornik podziemny + oczko; pływak MAX podziemny
+# GPIO: D1/D2 podziemny, D5/D6 oczko, D7 MAX (plan ogrodu)
+#
+# Flash: esphome run node_pomiar.yaml --device <IP>
+# Kalibracja: dostosuj *_distance_*_m po montażu (pomiar wody przy ~0% i ~100%)
+
+substitutions:
+  device_name: node-pomiar
+  friendly_name: "Node Pomiar"
+  topic_prefix: ogrod/node_pomiar
+  # Odległość sondy → lustro wody (metry). Im mniejsza wartość, tym wyższy poziom.
+  podziemny_distance_full_m: "0.35"
+  podziemny_distance_empty_m: "2.20"
+  oczko_distance_full_m: "0.40"
+  oczko_distance_empty_m: "3.50"
+
+esphome:
+  name: ${device_name}
+  friendly_name: ${friendly_name}
+  min_version: 2024.1.0
+  project:
+    name: ogrod.node_pomiar
+    version: "1.0.0"
+
+esp8266:
+  board: d1_mini
+  restore_from_flash: true
+
+packages:
+  wifi_api: !include common/wifi_api.yaml
+  mqtt: !include common/mqtt.yaml
+
+# --- Ultradźwięk podziemny (3500 l) ---
+sensor:
+  - platform: ultrasonic
+    id: podziemny_distance
+    name: "Podziemny odległość"
+    trigger_pin: D1
+    echo_pin: D2
+    unit_of_measurement: m
+    accuracy_decimals: 2
+    update_interval: 5s
+    pulse_time: 20us
+    filters:
+      - sliding_window_moving_average:
+          window_size: 5
+          send_every: 5
+      - lambda: |-
+          if (isnan(x) || x < 0.02 || x > 4.5) return NAN;
+          return x;
+
+  - platform: template
+    id: podziemny_percent
+    name: "Podziemny poziom"
+    icon: mdi:water-percent
+    unit_of_measurement: "%"
+    accuracy_decimals: 0
+    device_class: ""
+    state_class: measurement
+    update_interval: 10s
+    lambda: |-
+      if (isnan(id(podziemny_distance).state)) return NAN;
+      const float full_d = ${podziemny_distance_full_m};
+      const float empty_d = ${podziemny_distance_empty_m};
+      float d = id(podziemny_distance).state;
+      if (d <= full_d) return 100.0f;
+      if (d >= empty_d) return 0.0f;
+      return (empty_d - d) / (empty_d - full_d) * 100.0f;
+
+  # --- Ultradźwięk oczko (16000 l) ---
+  - platform: ultrasonic
+    id: oczko_distance
+    name: "Oczko odległość"
+    trigger_pin: D5
+    echo_pin: D6
+    unit_of_measurement: m
+    accuracy_decimals: 2
+    update_interval: 5s
+    pulse_time: 20us
+    filters:
+      - sliding_window_moving_average:
+          window_size: 5
+          send_every: 5
+      - lambda: |-
+          if (isnan(x) || x < 0.02 || x > 5.0) return NAN;
+          return x;
+
+  - platform: template
+    id: oczko_percent
+    name: "Oczko poziom"
+    icon: mdi:pool
+    unit_of_measurement: "%"
+    accuracy_decimals: 0
+    state_class: measurement
+    update_interval: 10s
+    lambda: |-
+      if (isnan(id(oczko_distance).state)) return NAN;
+      const float full_d = ${oczko_distance_full_m};
+      const float empty_d = ${oczko_distance_empty_m};
+      float d = id(oczko_distance).state;
+      if (d <= full_d) return 100.0f;
+      if (d >= empty_d) return 0.0f;
+      return (empty_d - d) / (empty_d - full_d) * 100.0f;
+
+binary_sensor:
+  # Pływak MAX przy zbiorniku podziemnym (NC/NO — dostosuj invert)
+  - platform: gpio
+    id: podziemny_max
+    name: "Podziemny MAX"
+    icon: mdi:water-alert
+    device_class: problem
+    pin:
+      number: D7
+      mode:
+        input: true
+        pullup: true
+    filters:
+      - delayed_on: 200ms
+      - delayed_off: 200ms
