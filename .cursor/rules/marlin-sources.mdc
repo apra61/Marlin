@@ -1,0 +1,15 @@
+---
+globs: Marlin/**/*.cpp, Marlin/**/*.h, Marlin/**/*.ino, Marlin/**/*.pde
+alwaysApply: false
+---
+
+# C++ / Arduino source conventions
+
+- Match the **existing file** you touch: include order, `PROGMEM` string tables, `F()` macros, and `extern` patterns in `Marlin/Marlin.h`.
+- Keep thematic split: motion (`planner.cpp`, `stepper.cpp`, `motion_control.cpp`), temperature (`temperature.cpp`), UI (`ultralcd*.cpp/h`), SD (`cardreader.cpp`, `Sd*.cpp`), main G-code dispatch (`Marlin_main.cpp`).
+- New G-code handlers belong in `Marlin_main.cpp` with a comment block listing the code (see existing `M665` / `M666` style). Update `README.md` implemented G-codes only if adding user-visible commands.
+- Pin access: use macros from `fastio.h` / `pins.h` for the active board; never raw Arduino `digitalWrite` on board-specific pins without checking `MOTHERBOARD`.
+- `NUM_AXIS` and axis arrays are ordered **X, Y, Z, E** — keep index usage consistent across modules.
+- Feature flags are `#define` / `#ifdef` in Configuration headers; wrap new behavior with clear `#ifdef FEATURE_NAME` guards and defaults in `Configuration.h` or `Configuration_adv.h`.
+- Do not add tests or build scaffolding unless requested; this tree predates common unit-test harnesses.
+- Python helpers (`create_speed_lookuptable.py`, `createTemperatureLookupMarlin.py`) are offline generators — run manually if lookup tables change; do not call them from firmware.
