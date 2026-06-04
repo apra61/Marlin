@@ -1,0 +1,20 @@
+---
+alwaysApply: true
+---
+
+# Marlin v1 firmware (this repo)
+
+- This is **Marlin v1** RepRap firmware (Sprinter/grbl lineage), not modern Marlin 2.x. APIs, file layout, and config macros differ from current Marlin.
+- Primary code lives under `Marlin/`. The Arduino sketch entry is `Marlin/Marlin.ino` (and legacy `Marlin.pde`).
+- Board support and pin maps: `Marlin/pins.h` plus `MOTHERBOARD` in `Marlin/Configuration.h`.
+- User-tunable settings belong in `Marlin/Configuration.h` and `Marlin/Configuration_adv.h`, not hard-coded in motion/temperature logic unless fixing a bug.
+- Delta-specific defaults: `Marlin/example_configurations/delta/` — copy or align with those when changing delta behavior.
+- License: GPL. Do not introduce closed-source dependencies or strip license headers from new files.
+- Default serial speed is **250000** baud (`BAUDRATE` in Configuration.h). Do not change baud or `SERIAL_PORT` without an explicit request.
+- Prefer **minimal, focused diffs**. Match existing naming, include style, and comment density in the file you edit.
+- Do not refactor unrelated modules, rename symbols project-wide, or modernize C++ style unless asked.
+- Embedded constraints: AVR RAM and flash are tight (~2KB+ LCD). Avoid large stack buffers, heap in hot paths, and unnecessary PROGMEM → RAM copies.
+- ISRs (stepper, temperature ADC) must stay short; defer heavy work to the main loop.
+- G-code and host protocol strings use existing `SERIAL_*` / `echo:` / `error:` conventions in `Marlin/Marlin_main.cpp` and `Marlin/language.h`.
+- After config or EEPROM layout changes, check `Marlin/ConfigurationStore.cpp` for EEPROM version bumps and migration impact.
+- There is no PlatformIO layout here; builds use Arduino 1.x / Makefile under `Marlin/` and addons in `ArduinoAddons/`.

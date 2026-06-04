@@ -1,0 +1,16 @@
+---
+description: Configuration.h, pins, and example_configs for Marlin printer setup
+globs: Marlin/Configuration.h, Marlin/Configuration_adv.h, Marlin/pins.h, Marlin/example_configurations/**/*
+alwaysApply: false
+---
+
+# Configuration and hardware setup
+
+- Treat `Marlin/Configuration.h` and `Marlin/Configuration_adv.h` as the **source of truth** for machine geometry, thermistors, endstops, LCD type, and optional features (`ENABLE_AUTO_BED_LEVELING`, delta settings, etc.).
+- Enabling a feature often requires **both** uncommenting a `#define` and supplying dependent macros (probe offsets, grid points, servo pins). Read the comment block above each option before enabling.
+- Bed auto-leveling: grid mode uses `AUTO_BED_LEVELING_GRID_POINTS` and probe rectangle macros; keep grid size reasonable (comments warn about flash/RAM).
+- Changing thermistor type, steps/mm, or max feedrates affects runtime behavior and EEPROM-stored values — note when users must re-run `M500` / `M502` or re-tune PID.
+- `MOTHERBOARD` must match actual electronics; pin errors can damage drivers or heaters — verify against the comment list in `Configuration.h` before changing board ID.
+- For delta machines, use `example_configurations/delta/Configuration*.h` as reference; runtime tuning may use **M665** (rod, radius, segments) and **M666** (tower endstop trim) per `Marlin_main.cpp`.
+- Do not commit machine-specific secrets (API keys, WiFi passwords); this firmware generation has no standard place for them.
+- When adding a new config `#define`, document valid values in a short comment and default to **disabled** (`//#define`) unless the task explicitly enables it for all builds.
