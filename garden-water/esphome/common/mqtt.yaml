@@ -1,8 +1,0 @@
-# Włącz w secrets.yaml: mqtt_broker, mqtt_username, mqtt_password
-mqtt:
-  broker: !secret mqtt_broker
-  username: !secret mqtt_username
-  password: !secret mqtt_password
-  discovery: true
-  discovery_prefix: !secret mqtt_discovery_prefix
-  topic_prefix: ${topic_prefix}
