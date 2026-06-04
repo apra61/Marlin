@@ -1,0 +1,1 @@
+# Pliki do przeniesienia do https://github.com/apra61/HA — skopiuj zawartość HA-export/ do nowego repo.

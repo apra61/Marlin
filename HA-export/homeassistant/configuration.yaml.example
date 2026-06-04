@@ -1,0 +1,7 @@
+# Fragment do wklejenia w główny configuration.yaml Home Assistant
+homeassistant:
+  packages:
+    ogrod_pomiary: !include packages/ogrod_pomiary.yaml
+
+# Alternatywa, gdy pakiety leżą w podkatalogu tego repo:
+# ogrod_pomiary: !include homeassistant/packages/ogrod_pomiary.yaml
